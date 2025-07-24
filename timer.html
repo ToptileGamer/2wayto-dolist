@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Study Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Study Timer</h1>
+
+  <h3>Enter up to 3 Tasks:</h3>
+  <input type="text" id="task1" placeholder="Task 1"><br>
+  <input type="text" id="task2" placeholder="Task 2"><br>
+  <input type="text" id="task3" placeholder="Task 3"><br><br>
+
+  <h3>Choose Timer Mode:</h3>
+  <input type="radio" id="pomodoro" name="mode" checked>
+  <label for="pomodoro">Pomodoro (25 min work / 5 min break)</label><br>
+
+  <input type="radio" id="custom" name="mode">
+  <label for="custom">Custom</label><br>
+
+  <div id="customTimes">
+    Work (min): <input type="number" id="customWork" value="30"><br>
+    Break (min): <input type="number" id="customBreak" value="10"><br>
+  </div><br>
+
+  <button onclick="startTimer()">▶ Start</button>
+  <button onclick="pauseTimer()">⏸ Pause</button>
+  <button onclick="stopTimer()">⏹ Stop</button>
+
+  <h3 id="currentTask"></h3>
+  <h2 id="timer">00:00</h2>
+  <h3 id="status">Status: Not started</h3>
+
+  <h3>Task Checklist:</h3>
+  <ul>
+    <li><input type="checkbox" id="check1"> <span id="label1"></span></li>
+    <li><input type="checkbox" id="check2"> <span id="label2"></span></li>
+    <li><input type="checkbox" id="check3"> <span id="label3"></span></li>
+  </ul>
+
+  <script>
+    let timer;
+    let timeRemaining;
+    let isWorkTime = true;
+    let isPaused = false;
+    let currentTaskIndex = 0;
+    let tasks = [];
+    let workTime = 0;
+    let breakTime = 0;
+
+    function startTimer() {
+      tasks = [
+        document.getElementById('task1').value,
+        document.getElementById('task2').value,
+        document.getElementById('task3').value
+      ];
+
+      // Update checklist labels
+      document.getElementById('label1').innerText = tasks[0] || 'Task 1';
+      document.getElementById('label2').innerText = tasks[1] || 'Task 2';
+      document.getElementById('label3').innerText = tasks[2] || 'Task 3';
+
+      if (document.getElementById('pomodoro').checked) {
+        workTime = 25 * 60;
+        breakTime = 5 * 60;
+      } else {
+        workTime = parseInt(document.getElementById('customWork').value) * 60;
+        breakTime = parseInt(document.getElementById('customBreak').value) * 60;
+      }
+
+      currentTaskIndex = 0;
+      isWorkTime = true;
+      isPaused = false;
+      timeRemaining = workTime;
+
+      if (!tasks[currentTaskIndex]) {
+        document.getElementById('status').innerText = "No tasks entered!";
+        return;
+      }
+
+      updateTaskUI();
+      startCountdown();
+    }
+
+    function pauseTimer() {
+      if (!timer) return;
+
+      isPaused = !isPaused;
+      document.getElementById('status').innerText = isPaused
+        ? "Paused"
+        : isWorkTime
+        ? "Work Time!"
+        : "Break Time!";
+    }
+
+    function stopTimer() {
+      clearInterval(timer);
+      timer = null;
+      isPaused = false;
+      timeRemaining = 0;
+      currentTaskIndex = 0;
+      document.getElementById('timer').innerText = "00:00";
+      document.getElementById('status').innerText = "Status: Stopped";
+      document.getElementById('currentTask').innerText = "";
+    }
+
+    function updateTaskUI() {
+      document.getElementById('currentTask').innerText =
+        "Current Task: " + (tasks[currentTaskIndex] || "Task");
+      document.getElementById('status').innerText = isWorkTime
+        ? "Work Time!"
+        : "Break Time!";
+    }
+
+    function startCountdown() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (isPaused) return;
+
+        if (timeRemaining <= 0) {
+          clearInterval(timer);
+          if (isWorkTime) {
+            document.getElementById('status').innerText = "Break Time!";
+            isWorkTime = false;
+            timeRemaining = breakTime;
+            startCountdown();
+          } else {
+            // End of break → move to next task
+            currentTaskIndex++;
+            if (currentTaskIndex >= tasks.length || !tasks[currentTaskIndex]) {
+              document.getElementById('status').innerText = "All tasks complete!";
+              document.getElementById('currentTask').innerText = "";
+              return;
+            }
+            isWorkTime = true;
+            timeRemaining = workTime;
+            updateTaskUI();
+            startCountdown();
+          }
+        } else {
+          updateDisplay(timeRemaining);
+          timeRemaining--;
+        }
+      }, 1000);
+    }
+
+    function updateDisplay(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      document.getElementById('timer').innerText =
+        `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+  </script>
+</body>
+</html>
